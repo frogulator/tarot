@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spinning Card with Thickness - Multiple Images</title>
+  <style>
+    body { margin: 0; 
+    background: #fffff8;}
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // Scene setup
+    const scene = new THREE.Scene();
+    scene.background = null; // Transparent background
+
+    // Camera setup
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+    // Renderer setup with alpha: true for transparency
+    const renderer = new THREE.WebGLRenderer({ alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Add Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Ambient light for soft overall lighting
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8 ); // Strong directional light (like sunlight)
+    directionalLight.position.set(2, 3, 5); // Position the light above and in front of the card
+    scene.add(directionalLight);
+
+    // Geometry for the card (BoxGeometry to add thickness)
+    const cardGeometry = new THREE.BoxGeometry(1.5, 2.7, 0.03); // Small depth for card thickness
+
+    // Load textures for the front and back of the card
+    const textureLoader = new THREE.TextureLoader();
+    const frontTextures = [
+      textureLoader.load('1.png'), // Initial front texture
+      textureLoader.load('2.png'),
+      textureLoader.load('3.png'),
+      textureLoader.load('4.png'),
+      textureLoader.load('5.png'),
+      textureLoader.load('6.png')
+    ];
+
+    let currentTextureIndex = 0;
+
+    const backTexture = textureLoader.load('bg.png'); // Image for the back
+
+    // Materials for the front, back, and sides of the card
+    const frontMaterial = new THREE.MeshStandardMaterial({ map: frontTextures[currentTextureIndex] });
+    const backMaterial = new THREE.MeshStandardMaterial({ map: backTexture });
+    const sideMaterial = new THREE.MeshStandardMaterial({ color: 0xdddddd }); // Gray for the sides
+
+    // Array of materials for each face of the box
+    const materials = [
+      sideMaterial, // Right side
+      sideMaterial, // Left side
+      sideMaterial, // Top side
+      sideMaterial, // Bottom side
+      frontMaterial, // Front side
+      backMaterial  // Back side
+    ];
+
+    // Mesh for the card (with thickness)
+    const card = new THREE.Mesh(cardGeometry, materials);
+
+    // Add the card to the scene
+    scene.add(card);
+
+    // Position the camera
+    camera.position.z = 4;
+
+    // Variable to track the rotation
+    let previousRotation = 0;
+
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Spin the card
+      card.rotation.y += 0.01;
+
+      // Calculate the current rotation in degrees
+      const rotationInDegrees = (card.rotation.y * (180 / Math.PI)) % 360;
+
+      // Check if the rotation has passed 180 degrees
+      if (rotationInDegrees >= 180 && previousRotation < 180) {
+        // Move to the next texture in the array
+        currentTextureIndex = (currentTextureIndex + 1) % frontTextures.length;
+        frontMaterial.map = frontTextures[currentTextureIndex]; // Update front texture
+        frontMaterial.needsUpdate = true; // Flag the material for update
+      }
+
+      // Reset the rotation if it exceeds 360 degrees
+      if (rotationInDegrees >= 360) {
+        card.rotation.y = 0;
+      }
+
+      previousRotation = rotationInDegrees;
+
+      // Render the scene
+      renderer.render(scene, camera);
+    }
+
+    // Handle window resizing
+    window.addEventListener('resize', () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      renderer.setSize(width, height);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    });
+
+    // Start the animation
+    animate();
+  </script>
+</body>
+</html>
